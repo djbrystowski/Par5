@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Warmer — guess who I'm thinking of</title>
+<meta name="description" content="A two-player guessing game. One of you thinks of a person, the other guesses, and every guess gets a 0–100 score for how close it is.">
+<meta property="og:title" content="Warmer 🔥">
+<meta property="og:description" content="I'm thinking of someone. Can you guess who?">
+<meta name="theme-color" content="#3f3370">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#4b3d7d; --bg2:#2e2558; --card:#1d1a26; --card2:#26222f; --line:rgba(255,255,255,.08);
+    --muted:#a19bb3; --orange:#ff7a59; --orange-ink:#2a1208;
+    --c1:#7aa7ff; --c2:#6fd0ff; --c3:#ffd166; --c4:#ffad4d; --c5:#ff7a59;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{background:var(--bg2)}
+  html,body{margin:0;color:#fff;font-family:Inter,system-ui,sans-serif}
+  body{min-height:100dvh;background:linear-gradient(180deg,var(--bg1) 0,var(--bg2) 700px,var(--bg2) 100%)}
+  .wrap{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 40px)}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .logo{font:700 22px 'Space Grotesk',system-ui,sans-serif;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;cursor:pointer;background:none;border:0;color:#fff;padding:0}
+  .logo span{font-size:20px}
+  .hlink{background:rgba(255,255,255,.1);border:0;color:#fff;border-radius:99px;padding:7px 14px;font:600 13px Inter;cursor:pointer}
+  h1{font:700 40px/1.02 'Space Grotesk',system-ui,sans-serif;letter-spacing:-.03em;margin:26px 0 10px}
+  h2{font:700 24px/1.15 'Space Grotesk',system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 6px}
+  p{line-height:1.5}
+  .lead{color:#d9d4e8;font-size:17px;margin:0 0 22px}
+  .card{background:var(--card);border-radius:24px;padding:20px;box-shadow:0 12px 34px rgba(10,5,30,.28);margin-bottom:14px}
+  .card.solved{background:var(--orange);color:var(--orange-ink)}
+  .eyebrow{font:600 11px Inter;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .solved .eyebrow{color:rgba(42,18,8,.7)}
+  .big{font:700 30px/1.1 'Space Grotesk',system-ui,sans-serif;letter-spacing:-.02em;margin:10px 0 4px;word-break:break-word}
+  .sub{color:var(--muted);font-size:14px;line-height:1.45}
+  .solved .sub{color:rgba(42,18,8,.8)}
+  .badge{background:rgba(255,255,255,.08);color:#fff;border-radius:99px;padding:4px 9px;font:600 11px Inter;letter-spacing:0;text-transform:none;white-space:nowrap}
+  .solved .badge{background:#17141f}
+  .btn{border:0;border-radius:16px;padding:15px 18px;font:600 15px Inter;cursor:pointer;background:var(--orange);color:#fff;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+  .btn:disabled{opacity:.4;cursor:default}
+  .btn.ghost{background:rgba(255,255,255,.1)}
+  .btn.dark{background:#17141f}
+  .btn.wa{background:#25d366;color:#06301a}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;gap:10px}
+  .row>*{flex:1}
+  .field{width:100%;background:var(--card2);border:1.5px solid transparent;border-radius:14px;color:#fff;font:500 17px Inter;padding:14px;outline:none}
+  .field:focus{border-color:var(--orange)}
+  label.l{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+  .seg{display:flex;background:var(--card2);border-radius:12px;padding:3px;margin-top:12px}
+  .seg button{flex:1;border:0;background:none;color:var(--muted);padding:10px;border-radius:10px;font:600 13px Inter;cursor:pointer}
+  .seg button.on{background:#3a3450;color:#fff}
+  .err{color:#ff9a9a;font-size:13px;margin-top:8px;min-height:18px}
+  .how{display:grid;gap:10px;margin:8px 0 22px}
+  .how div{display:flex;gap:12px;align-items:flex-start;color:#d9d4e8;font-size:15px;line-height:1.4}
+  .how b{flex:0 0 28px;height:28px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center;font:700 13px 'Space Grotesk',system-ui,sans-serif;color:#fff}
+  .ex{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chip{font:600 12px Inter;border-radius:7px;padding:3px 7px;color:#111;min-width:26px;text-align:center;display:inline-block}
+  .gl{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+  .g{background:var(--card2);border-radius:14px;padding:11px 12px;display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center}
+  .g .n{color:var(--muted);font:600 12px Inter}
+  .g .t{font-weight:600;font-size:15px;word-break:break-word}
+  .g .bar{grid-column:2/4;height:5px;border-radius:9px;background:rgba(255,255,255,.07);overflow:hidden}
+  .g .bar i{display:block;height:100%;border-radius:9px}
+  .g.pend .t{color:var(--muted)}
+  .secret{background:var(--card2);border-radius:12px;padding:11px 13px;font-size:14px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;border:0;width:100%;text-align:left;font-family:inherit}
+  .secret b{color:#fff}
+  .match{background:rgba(255,122,89,.15);color:var(--orange);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600;margin-top:12px}
+  .scoreBox{display:flex;align-items:baseline;gap:12px;margin:18px 0 4px}
+  .scoreBox b{font:700 54px/1 'Space Grotesk',system-ui,sans-serif;min-width:70px}
+  input[type=range]{width:100%;accent-color:var(--orange);height:32px}
+  .scale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+  .quick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+  .quick button{border:0;border-radius:10px;padding:10px 0;font:700 14px 'Space Grotesk',system-ui,sans-serif;cursor:pointer;color:#111}
+  .note{background:rgba(255,209,102,.12);color:#ffd166;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+  .small{font-size:12px;color:var(--muted)}
+  .linkbtn{background:none;border:0;color:var(--muted);font:500 13px Inter;cursor:pointer;padding:10px 0;text-decoration:underline;text-underline-offset:3px}
+  .games{display:flex;flex-direction:column;gap:8px}
+  .gi{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(0,0,0,.18);border-radius:16px;padding:13px 14px;cursor:pointer;border:0;color:#fff;font:inherit;text-align:left;width:100%}
+  .gi .who{font-weight:600}
+  .gi .st{font-size:12px;color:var(--muted)}
+  .gi .turn{background:var(--orange);color:#fff;border-radius:99px;font:600 11px Inter;padding:4px 9px;white-space:nowrap}
+  .pass{position:fixed;inset:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));z-index:20;display:flex;align-items:center;justify-content:center;padding:30px}
+  .pass .inner{max-width:400px;width:100%;text-align:center}
+  .pass .emoji{font-size:54px}
+  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%) translateY(20px);background:#fff;color:#111;border-radius:99px;padding:10px 18px;font:600 14px Inter;opacity:0;transition:.25s;pointer-events:none;z-index:30}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  .hist .li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+  .hist .li:first-child{border-top:0}
+  .confirm{background:var(--card2);border-radius:16px;padding:14px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+/* ================= helpers ================= */
+function h(tag, props, ...kids){
+  const el=document.createElement(tag);
+  if(props) for(const [k,v] of Object.entries(props)){
+    if(v==null||v===false) continue;
+    if(k==='class') el.className=v;
+    else if(k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if(k==='style') el.style.cssText=v;
+    else el.setAttribute(k, v===true?'':v);
+  }
+  for(const c of kids.flat()){ if(c==null||c===false) continue; el.append(c.nodeType?c:document.createTextNode(String(c))); }
+  return el;
+}
+const app=document.getElementById('app');
+const norm=s=>String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').trim().toLowerCase().replace(/[^a-z0-9֐-׿ ]/g,'').replace(/\s+/g,' ');
+const clean=(s,max=50)=>String(s||'').replace(/\s+/g,' ').trim().slice(0,max);
+const rid=()=>Math.random().toString(36).slice(2,10);
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800); }
+function ordinal(n){ const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function warmth(s){
+  if(s>=100) return {label:'Got it!', color:'#ffffff'};
+  if(s>=85) return {label:'Hot!', color:'var(--c5)'};
+  if(s>=65) return {label:'Getting warm', color:'var(--c4)'};
+  if(s>=45) return {label:'Lukewarm', color:'var(--c3)'};
+  if(s>=20) return {label:'Cold', color:'var(--c2)'};
+  return {label:'Ice cold', color:'var(--c1)'};
+}
+const chip=s=>h('span',{class:'chip',style:`background:${warmth(s).color}`},s);
+
+/* base64url for unicode JSON */
+function enc(obj){ const b=new TextEncoder().encode(JSON.stringify(obj)); let s=''; b.forEach(x=>s+=String.fromCharCode(x)); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function dec(str){ try{ str=str.replace(/-/g,'+').replace(/_/g,'/'); while(str.length%4) str+='='; const bin=atob(str); const b=Uint8Array.from(bin,c=>c.charCodeAt(0)); return JSON.parse(new TextDecoder().decode(b)); }catch(e){ return null; } }
+
+/* ================= storage (this device only) ================= */
+const KEY='warmer.v1';
+let mem={games:{}};
+function load(){ try{ const r=localStorage.getItem(KEY); if(r){ const o=JSON.parse(r); if(o&&o.games) mem=o; } }catch(e){} }
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(mem)); }catch(e){} }
+load();
+
+/* ================= game model =================
+ state = { id, v, mode:'link'|'local', n:[name0,name1], p:pickerIdx, r:round, st:'pick'|'guess'|'reveal'|'done',
+           k:'famous'|'mutual'|null, g:[[text, score|null]], a:answer|null, gu:gaveUp(0/1), s:solvedCount, h:[[picker,answer,guesses,gaveUp]] }
+ per-device record = { role, state, secrets:{round:name}, updated } */
+function newState(mode, n0, n1){ return {id:rid(), v:0, mode, n:[n0,n1], p:0, r:1, st:'pick', k:null, g:[], a:null, gu:0, s:0, h:[]}; }
+const other=i=>1-i;
+function lastGuess(s){ return s.g[s.g.length-1]; }
+function actor(s){
+  if(s.st==='pick') return s.p;
+  if(s.st==='guess'){ const l=lastGuess(s); return l && l[1]==null ? s.p : other(s.p); }
+  if(s.st==='reveal') return s.p;
+  if(s.st==='done') return other(s.p); // the guesser picks next
+  return s.p;
+}
+function validState(s){
+  return s && typeof s.id==='string' && Array.isArray(s.n) && s.n.length===2 && [0,1].includes(s.p) &&
+    ['pick','guess','reveal','done'].includes(s.st) && Array.isArray(s.g) && Number.isInteger(s.v);
+}
+
+/* ================= app state ================= */
+let cur=null;        // per-device record of the open game
+let undoState=null;  // state before my last move (until I leave the screen)
+let shareOpen=false; let passTo=null; let flash='';
+
+function rec(id){ return mem.games[id]; }
+function saveRec(r){ r.updated=Date.now(); mem.games[r.state.id]=r; persist(); }
+function me(){ return cur.state.mode==='local' ? actor(cur.state) : cur.role; }
+function setUrl(){
+  if(!cur){ history.replaceState(null,'',location.pathname); return; }
+  const s=cur.state;
+  const hash = s.mode==='local' ? '#local='+s.id : '#g='+enc(s);
+  history.replaceState(null,'',location.pathname+hash);
+}
+function linkFor(s){ return location.origin+location.pathname+'#g='+enc(s); }
+
+/* apply a move: mutate a copy, bump version, save, and in link mode open the share panel */
+function commit(mutator, shareMsg){
+  const before=structuredClone(cur.state);
+  const s=structuredClone(cur.state);
+  const prevActor=actor(s);
+  mutator(s);
+  s.v++;
+  cur.state=s; saveRec(cur); setUrl();
+  undoState=before;
+  if(s.mode==='link'){ shareOpen=true; cur.lastMsg=shareMsg; saveRec(cur); }
+  else if(actor(s)!==prevActor){ passTo=actor(s); }
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+function undo(){
+  if(!undoState) return;
+  cur.state=undoState; undoState=null; shareOpen=false; passTo=null; saveRec(cur); setUrl(); render(); toast('Move undone');
+}
+
+/* ================= actions ================= */
+function actPick(name, kind){
+  const s=cur.state; const nextPicker = s.st==='done' ? other(s.p) : s.p; const round = s.st==='done' ? s.r+1 : s.r;
+  cur.secrets=cur.secrets||{}; cur.secrets[round]=name;
+  commit(st=>{ st.p=nextPicker; st.r=round; st.st='guess'; st.k=kind; st.g=[]; st.a=null; st.gu=0; },
+    `I'm thinking of ${kind==='mutual'?'someone we both know':'someone famous'} 🤔 Your first guess:`);
+}
+function actGuess(text){
+  commit(st=>{ st.g.push([text,null]); }, `My guess: ${text}. How close? 🔥`);
+}
+function actScore(n){
+  commit(st=>{ lastGuess(st)[1]=n; }, `${n}/100 — ${warmth(n).label}. Guess again:`);
+}
+function actSolve(answer){
+  commit(st=>{ lastGuess(st)[1]=100; st.st='done'; st.a=answer; st.gu=0; st.s=(st.s||0)+1;
+    st.h=[[st.p, answer, st.g.length, 0], ...st.h].slice(0,10); },
+    `YES! It was ${answer} — you got it in ${cur.state.g.length} 🎯 Your turn to pick:`);
+}
+function actGiveUp(){
+  commit(st=>{ st.st='reveal'; }, `I give up 🏳️ Who was it?`);
+}
+function actReveal(answer){
+  commit(st=>{ st.st='done'; st.a=answer; st.gu=1; st.h=[[st.p, answer, st.g.length, 1], ...st.h].slice(0,10); },
+    `It was ${answer}! 😏 Your turn to pick:`);
+}
+
+/* ================= opening games ================= */
+function openFromHash(){
+  const hs=location.hash.slice(1);
+  flash='';
+  if(hs.startsWith('g=')){
+    const s=dec(hs.slice(2));
+    if(!validState(s)){ cur=null; flash='That game link looks broken. Ask your friend to send it again.'; return; }
+    s.mode='link';
+    let r=rec(s.id);
+    if(!r){ r={role:actor(s), state:s, secrets:{}}; flash=''; }
+    else if(s.v < r.state.v){ flash='You opened an older link — showing the latest move instead.'; }
+    else if(s.v > r.state.v){ r.state=s; shareOpen=false; }
+    cur=r; saveRec(cur); setUrl(); return;
+  }
+  if(hs.startsWith('local=')){
+    const r=rec(hs.slice(6)); cur = r || null; if(!r) flash='That game isn’t on this device.'; return;
+  }
+  cur=null;
+}
+function goHome(){ cur=null; undoState=null; shareOpen=false; passTo=null; flash=''; setUrl(); render(); window.scrollTo(0,0); }
+function openGame(id){ cur=rec(id); undoState=null; shareOpen=false; passTo=null; flash=''; setUrl(); render(); window.scrollTo(0,0); }
+
+/* ================= views ================= */
+function header(){
+  return h('header',null,
+    h('button',{class:'logo',onclick:goHome},h('span',null,'🔥'),'Warmer'),
+    cur ? h('button',{class:'hlink',onclick:goHome},'All games') : null);
+}
+
+function viewHome(){
+  const list=Object.values(mem.games).sort((a,b)=>(b.updated||0)-(a.updated||0));
+  const kids=[header()];
+  if(flash) kids.push(h('div',{class:'note'},flash));
+  kids.push(
+    h('h1',null,'Guess who I’m thinking of.'),
+    h('p',{class:'lead'},'A two-player game. One of you thinks of a person, the other guesses people, and every guess gets a score from 0 to 100 for how close it is.'),
+    h('div',{class:'how'},
+      h('div',null,h('b',null,'1'),h('span',null,'Pick anyone — someone famous, or someone you both know.')),
+      h('div',null,h('b',null,'2'),h('span',null,'Your friend guesses one person at a time.')),
+      h('div',null,h('b',null,'3'),h('span',null,'You score each guess. Thinking of Obama? Katy Perry gets a 5. Trump gets an 85.')),
+      h('div',null,h('b',null,'4'),h('span',null,'Keep going until they get it. Then swap.'))),
+    h('div',{class:'stack'},
+      h('button',{class:'btn',onclick:()=>renderSetup('link')},'Play with a friend'),
+      h('button',{class:'btn ghost',onclick:()=>renderSetup('local')},'Play on one phone')),
+    h('p',{class:'small',style:'margin-top:10px'},'Playing with a friend works by sending a link after each move — one tap to WhatsApp. No sign-up.'));
+  if(list.length){
+    kids.push(h('h2',{style:'margin-top:30px;font-size:18px'},'Your games'));
+    kids.push(h('div',{class:'games'}, list.map(r=>{
+      const s=r.state; const myTurn = s.mode==='local' || actor(s)===r.role;
+      const opp = s.mode==='local' ? `${s.n[0]} & ${s.n[1]}` : `with ${s.n[other(r.role)]}`;
+      return h('button',{class:'gi',onclick:()=>openGame(s.id)},
+        h('span',null,h('div',{class:'who'},opp),h('div',{class:'st'},`Round ${s.r} · ${s.s} solved${s.mode==='local'?' · one phone':''}`)),
+        myTurn ? h('span',{class:'turn'}, s.mode==='local'?'Open':'Your turn') : h('span',{class:'st'},'Waiting'));
+    })));
+  }
+  app.replaceChildren(...kids);
+}
+
+function renderSetup(mode){
+  const a=h('input',{class:'field',type:'text',placeholder:mode==='link'?'Your name':'Player 1',maxlength:24,autocomplete:'given-name'});
+  const b=h('input',{class:'field',type:'text',placeholder:mode==='link'?'Your friend’s name':'Player 2',maxlength:24,autocomplete:'off'});
+  const err=h('div',{class:'err'});
+  try{ if(mem.myName && mode==='link') a.value=mem.myName; }catch(e){}
+  const go=h('button',{class:'btn',onclick:()=>{
+    const n0=clean(a.value,24), n1=clean(b.value,24);
+    if(!n0||!n1){ err.textContent='Add both names.'; return; }
+    if(norm(n0)===norm(n1)){ err.textContent='Use two different names so you can tell whose turn it is.'; return; }
+    if(mode==='link'){ mem.myName=n0; }
+    const s=newState(mode,n0,n1);
+    cur={role:0, state:s, secrets:{}}; saveRec(cur); setUrl(); undoState=null; render(); window.scrollTo(0,0);
+  }},'Start — I’ll pick first');
+  [a,b].forEach(i=>i.addEventListener('keydown',e=>{ if(e.key==='Enter') go.click(); }));
+  app.replaceChildren(header(), h('div',{class:'card'},
+    h('h2',null, mode==='link'?'Play with a friend':'Play on one phone'),
+    h('p',{class:'sub'}, mode==='link'?'You’ll send a link after each move. Your friend opens it on their phone and sends one back.':'Pass the phone back and forth. The game hides the answer when it’s the guesser’s turn.'),
+    h('label',{class:'l'}, mode==='link'?'You':'Picks first'), a,
+    h('label',{class:'l'}, mode==='link'?'Your friend':'Guesses first'), b, err, go));
+  setTimeout(()=>(a.value?b:a).focus(),50);
+}
+
+function statusCard(){
+  const s=cur.state, m=me(), act=actor(s), picker=s.p, guesser=other(s.p);
+  const P=s.n[picker], G=s.n[guesser];
+  const scored=s.g.filter(x=>x[1]!=null);
+  const best=scored.length ? scored.reduce((a,b)=>b[1]>a[1]?b:a) : null;
+  const top=(l)=>h('div',{class:'eyebrow'},h('span',null,l),h('span',{class:'badge'},`🔥 ${s.s} solved`));
+  if(s.st==='done'){
+    return h('div',{class:'card solved'}, h('div',{class:'eyebrow'},h('span',null, s.gu?'🏳️ Gave up':`✓ Got it in ${s.g.length}`),h('span',{class:'badge'},`🔥 ${s.s} solved`)),
+      h('div',{class:'sub',style:'margin-top:10px'}, `${picker===m && s.mode==='link'?'You were':P+' was'} thinking of`),
+      h('div',{class:'big'}, s.a),
+      h('div',{class:'ex'}, s.g.filter(x=>x[1]!=null).map(x=>h('span',{class:'chip',style:'background:#17141f;color:#fff'},x[1]))));
+  }
+  if(s.st==='pick') return h('div',{class:'card'}, top(`Round ${s.r}`), h('div',{class:'big'}, act===m?'Your turn to pick.':`${P} is picking…`),
+    h('div',{class:'sub'}, act===m?`Think of someone for ${G} to guess.`:'You’ll get a link when they’re ready.'));
+  if(s.st==='reveal') return h('div',{class:'card'}, top(`Round ${s.r}`), h('div',{class:'big'}, `${G} gave up 🏳️`),
+    h('div',{class:'sub'}, act===m?'Reveal who you were thinking of.':`Waiting for ${P} to reveal the answer.`));
+  const l=lastGuess(s);
+  const kind = s.k==='mutual'?'someone you both know':'someone famous';
+  if(l && l[1]==null) return h('div',{class:'card'}, top(`Round ${s.r} · ${ordinal(s.g.length)} guess`),
+    h('div',{class:'big'}, `${l[0]}?`), h('div',{class:'sub'}, act===m?`${G} guessed this. How close is it?`:`Waiting for ${P} to score it.`));
+  if(best){
+    const lastS=scored[scored.length-1], w=warmth(lastS[1]);
+    return h('div',{class:'card'}, top(`Round ${s.r} · ${s.g.length} ${s.g.length===1?'guess':'guesses'}`),
+      h('div',{style:'display:flex;align-items:center;gap:14px;margin-top:10px'},
+        h('div',{style:`font:700 56px/1 'Space Grotesk',system-ui,sans-serif;color:${w.color}`}, lastS[1]),
+        h('div',null,h('div',{style:'font:700 19px Space Grotesk,system-ui,sans-serif;word-break:break-word'},lastS[0]),h('div',{class:'sub',style:`color:${w.color}`},w.label))),
+      h('div',{class:'sub',style:'margin-top:10px'}, act===m?`Hottest so far: ${best[0]} (${best[1]}). Guess again.`:`Waiting for ${G}’s next guess.`));
+  }
+  return h('div',{class:'card'}, top(`Round ${s.r}`), h('div',{class:'big'}, act===m?`${P} picked someone.`:`${G} is guessing…`),
+    h('div',{class:'sub'}, act===m?`It’s ${kind}. Who is it?`:`You picked ${kind}.`));
+}
+
+function secretRow(){
+  const s=cur.state; const name=cur.secrets && cur.secrets[s.r];
+  if(!name) return h('div',{class:'note'},'This device doesn’t have your pick saved (did you pick on another phone?). Score from memory.');
+  let shown = s.mode!=='local';
+  const b=h('b',null, shown?name:'••••••');
+  const btn=h('button',{class:'secret',onclick:()=>{ shown=!shown; b.textContent=shown?name:'••••••'; tip.textContent=shown?'Hide':'Tap to show'; }},
+    h('span',null,'You picked ',b), null);
+  const tip=h('span',{class:'small'}, shown?'Hide':'Tap to show'); btn.append(tip);
+  return btn;
+}
+
+function actionArea(){
+  const s=cur.state, m=me(), act=actor(s);
+  if(act!==m) return waitingArea();
+  if(s.st==='pick' || s.st==='done') return pickForm();
+  if(s.st==='reveal') return revealForm(false);
+  const l=lastGuess(s);
+  if(l && l[1]==null) return scoreForm();
+  return guessForm();
+}
+
+function pickForm(){
+  const s=cur.state; let kind='famous';
+  const nextGuesser = s.st==='done' ? s.n[s.p] : s.n[other(s.p)];
+  const inp=h('input',{class:'field',type:'text',placeholder:'e.g. Barack Obama',maxlength:50,autocomplete:'off'});
+  const seg=h('div',{class:'seg'}); const opts=[['famous','Someone famous'],['mutual','Someone we know']];
+  const draw=()=>seg.replaceChildren(...opts.map(([k,lbl])=>h('button',{class:k===kind?'on':'',onclick:()=>{kind=k;draw();}},lbl))); draw();
+  const err=h('div',{class:'err'});
+  const go=h('button',{class:'btn',onclick:()=>{ const v=clean(inp.value); if(!v){ err.textContent='Type a name first.'; return; } actPick(v,kind); }},'Lock it in');
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') go.click(); });
+  setTimeout(()=>inp.focus(),60);
+  return h('div',{class:'card'}, h('h2',null, s.st==='done'?`Round ${s.r+1}: your pick`:'Who are you thinking of?'),
+    h('p',{class:'sub'},`${nextGuesser} won’t see this. Spell it the way you’d want it revealed.`), inp, seg, err, go);
+}
+
+function guessForm(){
+  const s=cur.state;
+  const inp=h('input',{class:'field',type:'text',placeholder:'Who is it?',maxlength:50,autocomplete:'off'});
+  const err=h('div',{class:'err'});
+  const go=h('button',{class:'btn',onclick:()=>{
+    const v=clean(inp.value); if(!v){ err.textContent='Type a name.'; return; }
+    if(s.g.some(x=>norm(x[0])===norm(v))){ err.textContent='You already guessed them.'; return; }
+    actGuess(v); }},`Send guess #${s.g.length+1}`);
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') go.click(); });
+  setTimeout(()=>inp.focus(),60);
+  let confirming=false;
+  const give=h('button',{class:'linkbtn',onclick:()=>{
+    if(!confirming){ confirming=true; give.textContent='Tap again to give up and see the answer'; return; }
+    actGiveUp(); }},'I give up');
+  return h('div',{class:'card'}, h('h2',null,'Your guess'), inp, err, go, s.g.length?h('div',{style:'text-align:center'},give):null);
+}
+
+function scoreForm(){
+  const s=cur.state, l=lastGuess(s), secret=cur.secrets&&cur.secrets[s.r];
+  let val=null;
+  const num=h('b',{style:'color:var(--muted)'},'?'), lab=h('span',{class:'sub'},'Drag or tap a number');
+  const range=h('input',{type:'range',min:0,max:99,value:50,'aria-label':'Score'});
+  const send=h('button',{class:'btn',disabled:true,onclick:()=>{ if(val==null) return; actScore(val); }},'Send score');
+  const set=v=>{ val=v; range.value=v; range.style.opacity='1'; num.textContent=v; num.style.color=warmth(v).color; lab.textContent=warmth(v).label; lab.style.color=warmth(v).color; send.disabled=false; send.textContent=`Send ${v}`; };
+  range.style.opacity='.45';
+  range.addEventListener('input',()=>{ range.style.opacity='1'; set(+range.value); });
+  const quick=h('div',{class:'quick'}, [5,25,50,75,95].map(v=>h('button',{style:`background:${warmth(v).color}`,onclick:()=>set(v)},v)));
+  const isMatch = secret && norm(secret)===norm(l[0]);
+  const box=h('div');
+  const openConfirm=()=>{
+    const ans=h('input',{class:'field',type:'text',value:secret||l[0],maxlength:50});
+    box.replaceChildren(h('div',{class:'confirm'},
+      h('div',{class:'sub',style:'margin-bottom:8px'},'Nice. Confirm how the answer should be shown:'), ans,
+      h('div',{class:'row',style:'margin-top:10px'},
+        h('button',{class:'btn ghost',onclick:()=>box.replaceChildren()},'Cancel'),
+        h('button',{class:'btn',onclick:()=>{ const a=clean(ans.value)||l[0]; actSolve(a); }},'End round 🎯'))));
+  };
+  return h('div',{class:'card'}, secretRow(),
+    h('div',{class:'sub'},`${s.n[other(s.p)]}’s ${ordinal(s.g.length)} guess`),
+    h('div',{class:'big'},`${l[0]}?`),
+    isMatch ? h('div',{class:'match'},'That matches your pick — tap “They got it!”') : null,
+    h('div',{class:'scoreBox'},num,lab), range,
+    h('div',{class:'scale'},h('span',null,'0 · nothing alike'),h('span',null,'99 · so close')),
+    quick,
+    h('div',{class:'stack',style:'margin-top:14px'}, send, h('button',{class:'btn dark',onclick:openConfirm},'They got it! 🎯')), box);
+}
+
+function revealForm(){
+  const s=cur.state, secret=cur.secrets&&cur.secrets[s.r];
+  const ans=h('input',{class:'field',type:'text',value:secret||'',placeholder:'Who were you thinking of?',maxlength:50});
+  const err=h('div',{class:'err'});
+  return h('div',{class:'card'}, h('h2',null,'Reveal your pick'), ans, err,
+    h('button',{class:'btn',onclick:()=>{ const a=clean(ans.value); if(!a){ err.textContent='Type the name.'; return; } actReveal(a); }},'Reveal'));
+}
+
+function waitingArea(){
+  const s=cur.state;
+  if(s.mode==='local') return null;
+  const who=s.n[actor(s)];
+  return h('div',{class:'card'}, h('h2',null,`${who}’s turn`),
+    h('p',{class:'sub'},`Did you send them the latest link? If not, send it again:`),
+    shareButtons(cur.lastMsg||`Your turn in Warmer 🔥`),
+    h('button',{class:'linkbtn',onclick:()=>{ cur.role=other(cur.role); saveRec(cur); render(); }},`I’m actually ${who} — switch`));
+}
+
+function shareButtons(msg){
+  const url=linkFor(cur.state);
+  const text=`${msg} ${url}`;
+  const kids=[h('a',{class:'btn wa',href:'https://wa.me/?text='+encodeURIComponent(text),target:'_blank',rel:'noopener'},'Send on WhatsApp')];
+  if(navigator.share) kids.push(h('button',{class:'btn ghost',onclick:async()=>{ try{ await navigator.share({text:msg,url}); }catch(e){} }},'Share another way'));
+  kids.push(h('button',{class:'btn ghost',onclick:async()=>{ try{ await navigator.clipboard.writeText(text); toast('Link copied'); }catch(e){ prompt('Copy this link:', text); } }},'Copy link'));
+  return h('div',{class:'stack'},kids);
+}
+
+function sharePanel(){
+  const s=cur.state; const to=s.n[actor(s)];
+  return h('div',{class:'card',style:'border:2px solid var(--orange)'},
+    h('h2',null,`Send it to ${to}`),
+    h('p',{class:'sub'},`The game only moves when ${to} opens your link.`),
+    shareButtons(cur.lastMsg||'Your turn in Warmer 🔥'),
+    undoState ? h('div',{style:'text-align:center'},h('button',{class:'linkbtn',onclick:undo},'Undo my move (before you send it)')) : null);
+}
+
+function guessList(){
+  const s=cur.state; if(!s.g.length || s.st==='done') return null;
+  return h('div',{class:'card'}, h('div',{class:'eyebrow'},h('span',null,'Guesses'),h('span',null,`${s.g.length}`)),
+    h('div',{class:'gl'}, [...s.g].map((x,i)=>[x,i]).reverse().map(([x,i])=>{
+      const sc=x[1];
+      return h('div',{class:'g'+(sc==null?' pend':'')}, h('span',{class:'n'},i+1), h('span',{class:'t'},x[0]),
+        sc==null ? h('span',{class:'small'},'waiting') : chip(sc),
+        h('div',{class:'bar'},h('i',{style:`width:${sc==null?0:sc}%;background:${sc==null?'transparent':warmth(sc).color}`})));
+    })));
+}
+
+function historyCard(){
+  const s=cur.state; if(!s.h.length) return null;
+  return h('div',{class:'card hist'}, h('div',{class:'eyebrow',style:'margin-bottom:6px'},h('span',null,'Past rounds')),
+    s.h.map(x=>h('div',{class:'li'},h('span',null,`${s.n[x[0]]} picked `,h('b',null,x[1])),h('span',{class:'small'}, x[3]?'gave up':`${x[2]} ${x[2]===1?'guess':'guesses'}`))));
+}
+
+function passScreen(){
+  const s=cur.state, who=s.n[passTo];
+  return h('div',{class:'pass'},h('div',{class:'inner'},
+    h('div',{class:'emoji'},'📱'),
+    h('h2',{style:'margin:12px 0 6px'},`Pass the phone to ${who}`),
+    h('p',{class:'sub',style:'margin:0 0 20px'},'No peeking.'),
+    h('button',{class:'btn',onclick:()=>{ passTo=null; undoState=null; render(); }},`I’m ${who} — continue`),
+    undoState ? h('button',{class:'linkbtn',onclick:undo},'Undo last move') : null));
+}
+
+function viewGame(){
+  const s=cur.state;
+  const kids=[header()];
+  if(flash) kids.push(h('div',{class:'note'},flash));
+  if(s.mode==='link') kids.push(h('div',{class:'small',style:'margin:-6px 0 12px'},`You’re ${s.n[cur.role]} · playing with ${s.n[other(cur.role)]}`));
+  else kids.push(h('div',{class:'small',style:'margin:-6px 0 12px'},`${s.n[0]} & ${s.n[1]} · one phone · now: ${s.n[actor(s)]}`));
+  const scoring = s.st==='guess' && lastGuess(s) && lastGuess(s)[1]==null && actor(s)===me() && !(shareOpen && s.mode==='link');
+  if(!scoring) kids.push(statusCard());
+  if(shareOpen && s.mode==='link') kids.push(sharePanel());
+  else { const a=actionArea(); if(a) kids.push(a); }
+  const gl=guessList(); if(gl) kids.push(gl);
+  const hc=historyCard(); if(hc) kids.push(hc);
+  kids.push(h('div',{style:'text-align:center'},h('button',{class:'linkbtn',onclick:()=>{
+    if(deleteArm){ delete mem.games[s.id]; persist(); deleteArm=false; goHome(); toast('Game deleted'); }
+    else { deleteArm=true; render(); } }}, deleteArm?'Tap again to delete this game from this device':'Delete game')));
+  if(passTo!=null && s.mode==='local') kids.push(passScreen());
+  app.replaceChildren(...kids);
+}
+let deleteArm=false;
+
+function render(){ if(!cur) { deleteArm=false; viewHome(); } else viewGame(); }
+
+window.addEventListener('hashchange',()=>{ openFromHash(); undoState=null; passTo=null; render(); });
+openFromHash(); render();
+</script>
+</body>
+</html>
